@@ -12,6 +12,8 @@ public class WordQueue {
 
     public void empty() { letterList.clear(); }
 
+    public void removeLast() { letterList.remove(letterList.size() - 1); }
+
     public String word() {
         StringBuilder builder = new StringBuilder(letterList.size());
         for(Character letter: letterList) {

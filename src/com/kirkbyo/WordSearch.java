@@ -1,6 +1,7 @@
 package com.kirkbyo;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 /**
@@ -8,9 +9,13 @@ import java.util.Scanner;
  */
 public class WordSearch {
     private Scanner scanner;
+    static ArrayList<String> wordList = null;
 
     public WordSearch() {
-        setFile(new File("words-100k.txt"));
+        setFile(new File("words-10k.txt"));
+        if (wordList == null) {
+            wordList = findWords();
+        }
     }
 
     public boolean setFile(File file) {
@@ -23,13 +28,17 @@ public class WordSearch {
         }
     }
 
-    public boolean fileContainsWord(String word) {
+
+    public ArrayList<String> findWords() {
+        ArrayList<String> words = new ArrayList<String>();
         while (scanner.hasNextLine()) {
             String nextWord = scanner.nextLine();
-            if (nextWord.toLowerCase().equals(word)) {
-                return true;
-            }
+            words.add(nextWord);
         }
-        return false;
+        return words;
+    }
+
+    public boolean fileContainsWord(String word) {
+        return wordList.contains(word.toLowerCase());
     }
 }

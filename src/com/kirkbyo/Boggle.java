@@ -1,5 +1,7 @@
 package com.kirkbyo;
 
+import com.sun.xml.internal.ws.util.StringUtils;
+
 import java.lang.*;
 import java.util.*;
 
@@ -9,62 +11,69 @@ import java.util.*;
 public class Boggle {
     int maxAmountLetters = 8;
     int minimumAmountLetters = 3;
+    int gridWidth = 4;
+    int gridHeight = 4;
 
-    Set<LetterNode> nodes = null;
+    private WordSearch wordSeacher = new WordSearch();
+    private ArrayList<ArrayList<LetterNode>> nodes = null;
+    public Set<String> foundWords = new HashSet<String>();
 
-    LetterNode getValueIfExists(ArrayList<ArrayList<LetterNode>> array2D, int row, int column) {
-        try {
-            LetterNode value = array2D.get(row).get(column);
-            return value;
-        } catch (IndexOutOfBoundsException error) {
-            return null;
-        }
-    }
+    public void generateNodeArrayFrom(ArrayList<ArrayList<Character>> charMatrix) {
+        ArrayList<ArrayList<LetterNode>> nodes = new ArrayList<ArrayList<LetterNode>>();
 
-    Set<LetterNode> generateNodeSetFrom(Character[][] charMatrix) {
-        ArrayList<ArrayList<LetterNode>> unlinkedNodes = new ArrayList<ArrayList<LetterNode>>();
-        Set<LetterNode> nodeSet = new HashSet<LetterNode>();
-
-        for (Character[] row: charMatrix) {
+        for (ArrayList<Character> row: charMatrix) {
             ArrayList<LetterNode> rowCharacters = new ArrayList<LetterNode>();
             for (char character: row) {
                 LetterNode node = new LetterNode(character);
                 rowCharacters.add(node);
             }
-            unlinkedNodes.add(rowCharacters);
+            nodes.add(rowCharacters);
         }
 
-        for (int row=0; row < unlinkedNodes.size(); row++) {
-            ArrayList<LetterNode> rowNodes = unlinkedNodes.get(row);
-
-            for (int column=0; column < rowNodes.size(); column++) {
-                LetterNode node = rowNodes.get(column);
-                node.left = getValueIfExists(unlinkedNodes, row, column - 1);
-                node.right = getValueIfExists(unlinkedNodes, row, column + 1);
-                node.top = getValueIfExists(unlinkedNodes, row + 1, column);
-                node.bottom = getValueIfExists(unlinkedNodes, row - 1, column);
-                node.topLeftDiagonal= getValueIfExists(unlinkedNodes, row + 1, column - 1);
-                node.topRightDiagonal= getValueIfExists(unlinkedNodes, row + 1, column + 1);
-                node.bottomLeftDiagonal = getValueIfExists(unlinkedNodes, row - 1, column - 1);
-                node.bottomRightDiagonal = getValueIfExists(unlinkedNodes, row - 1, column + 1);
-                nodeSet.add(node);
-            }
-        }
-
-        return nodeSet;
+        this.nodes = nodes;
     }
 
-    String[] findWords() {
-
-        for (LetterNode node: nodes) {
-            WordQueue queue = new WordQueue();
-            queue.insert(node.character);
-            if (node.left != null) {
-
+    public Set<String> findWords() {
+        for (int i=0; i < gridWidth; i++) {
+            for (int j = 0; j < gridHeight; j++) {
+                recursivelyFindWords(nodes, i, j, new WordQueue());
             }
         }
 
+        sanitizeFoundWords();
 
-        return new String[]{ "Hello Word" };
+        return foundWords;
+    }
+
+    private void sanitizeFoundWords() {
+        Set<String> cleanArray = ((Set) ((HashSet) foundWords).clone());
+        for (String word: foundWords) {
+            if (word.length() <= 2) {
+                cleanArray.remove(word);
+            }
+        }
+        foundWords = cleanArray;
+    }
+
+    private void recursivelyFindWords(ArrayList<ArrayList<LetterNode>> nodes2D, int row, int column, WordQueue queue) {
+        LetterNode activeNode = nodes2D.get(row).get(column);
+        activeNode.visited = true;
+
+        queue.insert(activeNode.character);
+
+        if (wordSeacher.fileContainsWord(queue.word())) {
+            foundWords.add(StringUtils.capitalize(queue.word().toLowerCase()));
+        }
+
+        for (int r=row-1; r <= row+1 && r < gridWidth; r++) {
+            for (int col=column-1; col <= column+1 && col < gridHeight; col++) {
+                if (r >= 0 && col>=0 && !nodes2D.get(r).get(col).visited && queue.word().length() < maxAmountLetters) {
+                    recursivelyFindWords(nodes2D, r, col, queue);
+                }
+            }
+        }
+
+        queue.removeLast();
+        activeNode.visited = false;
     }
 }

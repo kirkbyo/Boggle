@@ -7,8 +7,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ozziekirkby on 2016-11-09.
@@ -20,6 +19,7 @@ public class Window extends JFrame {
     private int wordPanelWidth = 200;
     public int rowAmount = 4;
     public int columnAmount = 4;
+    Boggle boggle = new Boggle();
     private DefaultTableModel letterTableModel;
     private DefaultTableModel wordTableModel;
     private JTable letterTable = new JTable();
@@ -52,10 +52,10 @@ public class Window extends JFrame {
 
         // Table set up for the table for the users to enter what letters the boggle contains
         Object[][] data = {
-                {"A", "B", "C", "D"},
-                {"E", "F", "G", "H"},
-                {"I", "J", "K", "L"},
-                {"M", "N", "O", "P"},
+                {"K", "J", "S", "R"},
+                {"O", "N", "O", "N"},
+                {"L", "U", "Y", "D"},
+                {"O", "D", "E", "R"},
         };
 
 
@@ -106,15 +106,15 @@ public class Window extends JFrame {
                 charactersTable.add(rowCharacters);
             }
 
-            Character[][] array = new Character[charactersTable.size()][];
-            for (int i = 0; i < charactersTable.size(); i++) {
-                ArrayList<Character> row = charactersTable.get(i);
-                array[i] = row.toArray(new Character[row.size()]);
-            }
+            boggle.generateNodeArrayFrom(charactersTable);
+            Set<String> foundWords = boggle.findWords();
+            Object[] foundWordsArray = foundWords.toArray(new String[foundWords.size()]);
 
-            Set<LetterNode> nodes = new Boggle().generateNodeSetFrom(array);
-            System.out.println(nodes.toString());
-            System.out.println(nodes.size());
+            for (int i=0; i < foundWords.size(); i++) {
+                Vector<Object> data = new Vector<Object>();
+                data.add(foundWordsArray[i]);
+                wordTableModel.addRow(data);
+            }
         }
     };
 
