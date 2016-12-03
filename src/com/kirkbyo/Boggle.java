@@ -35,7 +35,7 @@ public class Boggle {
         this.nodes = nodes;
     }
 
-    public Set<String> findWords() {
+     public Set<String> findWords() {
         currentWordCount=0;
 
         for (int i=0; i < gridHeight; i++) {

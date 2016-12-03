@@ -5,6 +5,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ProgressBarUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -33,31 +34,36 @@ public class Window extends JFrame {
 
     /* --- Window Methods --- */
     public void create() {
+        this.setBackground(Color.white);
         // Letter Panel
         JScrollPane letterPane = new JScrollPane();
+        letterPane.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Color.lightGray));
 
         // Found Boggle Words Panel
         JPanel wordPane = new JPanel();
+        wordPane.setBackground(Color.decode("#f7f7f7"));
         wordPane.setPreferredSize(new Dimension(wordPanelWidth, windowHeight));
 
         // Solve Button®
         JButton solveButton = new JButton("Solve");
+        solveButton.setFocusPainted(false);
         solveButton.addActionListener(findWordsAction);
         solveButton.setPreferredSize(new Dimension(wordPanelWidth, 30));
         wordPane.add(solveButton, BorderLayout.NORTH);
 
         // Table contaning all the words
         JTable wordTable = new JTable();
-        wordTable.setDefaultEditor(Object.class, null);
+        wordTable.setEnabled(false);
         wordTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         wordTable.setFont(new Font("Sans-Serif", Font.PLAIN, 13));
         wordTable.setRowHeight(25);
 
         JScrollPane wordScrollPanel = new JScrollPane();
+        wordScrollPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.lightGray));
         wordScrollPanel.setPreferredSize(new Dimension(wordPanelWidth, windowHeight - 102));
 
         wordTableModel = new DefaultTableModel(0, 1);
-        wordTableModel.setColumnIdentifiers(new String[]{"Words"});
+        wordTableModel.setColumnIdentifiers(new String[]{""});
         wordTable.setModel(wordTableModel);
         wordScrollPanel.setViewportView(wordTable);
         wordPane.add(wordScrollPanel);
@@ -70,15 +76,16 @@ public class Window extends JFrame {
                 {"O", "D", "E", "R"},
         };
 
-
         letterTableModel = new DefaultTableModel(data, new String[]{"", "", "", ""});
         letterTable.setRowHeight(estimatedRowHeight());
         letterTable.setModel(letterTableModel);
         letterTable.setFont(new Font("Sans-Serif", Font.PLAIN, 25));
         letterTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        letterTable.setSelectionBackground(Color.decode("#55acee"));
         setCellsAlignment(letterTable, SwingConstants.CENTER);
         letterPane.setViewportView(letterTable);
         letterPane.setPreferredSize(new Dimension(tableWidth, windowHeight));
+        setTableTextEditorFontSize(letterTable, new Font("Sans-Serif", Font.PLAIN, 25));
 
         add(wordPane, BorderLayout.WEST);
         add(letterPane, BorderLayout.EAST);
@@ -94,10 +101,13 @@ public class Window extends JFrame {
 
     private JPanel createLoaderHDD() {
         JPanel HDDPanel = new JPanel();
+        HDDPanel.setBackground(Color.decode("#e3e3e3"));
         HDDPanel.setLayout(new BorderLayout());
+        HDDPanel.setBorder(BorderFactory.createMatteBorder(1,0,0,0, Color.lightGray));
         HDDPanel.setPreferredSize(new Dimension(windowWidth(), 40));
 
         JPanel properties = new JPanel();
+        properties.setBackground(Color.decode("#e3e3e3"));
         properties.setPreferredSize(new Dimension(windowWidth(), 35));
 
         JLabel rowLabel = new JLabel();
@@ -131,7 +141,7 @@ public class Window extends JFrame {
         });
         properties.add(columnComboBox);
 
-        HDDPanel.add(properties, BorderLayout.SOUTH);
+        HDDPanel.add(properties, BorderLayout.NORTH);
 
         progressBar = new JProgressBar(0, 100);
         progressBar.setBorder(BorderFactory.createEmptyBorder());
@@ -139,6 +149,15 @@ public class Window extends JFrame {
         HDDPanel.add(progressBar);
 
         return HDDPanel;
+    }
+
+    private void setTableTextEditorFontSize(JTable table, Font font) {
+        for (int i=0; i < table.getColumnModel().getColumnCount(); i++) {
+            JTextField exampleTextField = new JTextField();
+            exampleTextField.setFont(font);
+            DefaultCellEditor cellEditor = new DefaultCellEditor(exampleTextField);
+            table.getColumnModel().getColumn(i).setCellEditor(cellEditor);
+        }
     }
 
     /* setCellsAlignment: Aligns table cells content
@@ -180,6 +199,7 @@ public class Window extends JFrame {
         letterTableModel.setDataVector(generateRandomLetterGrid(), arrayWithEmptyStrings(columnAmount));
         letterTable.setRowHeight(estimatedRowHeight());
         setCellsAlignment(letterTable, SwingConstants.CENTER);
+        setTableTextEditorFontSize(letterTable, new Font("Sans-Serif", Font.PLAIN, 25));
     }
 
     private String[] arrayWithEmptyStrings(int amount) {
@@ -206,8 +226,10 @@ public class Window extends JFrame {
                 charactersTable.add(rowCharacters);
             }
 
+            letterTable.setEnabled(false);
             progressBar.setValue(0);
             progressBar.setMaximum(gridUtilities.amountOfPossibilities(rowAmount, columnAmount));
+            wordTableModel.setRowCount(0);
             boggle.generateNodeArrayFrom(charactersTable);
 
             new Thread(new Runnable() {
@@ -221,6 +243,7 @@ public class Window extends JFrame {
                         data.add(foundWordsArray[i]);
                         wordTableModel.addRow(data);
                     }
+                    letterTable.setEnabled(true);
                 }
             }, "Boggle solver thread").start();
 
