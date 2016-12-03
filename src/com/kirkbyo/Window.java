@@ -2,11 +2,13 @@ package com.kirkbyo;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.plaf.ProgressBarUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
 
 /**
@@ -20,6 +22,7 @@ public class Window extends JFrame {
     public int rowAmount = 4;
     public int columnAmount = 4;
     Boggle boggle = new Boggle();
+    public JProgressBar progressBar;
     private DefaultTableModel letterTableModel;
     private DefaultTableModel wordTableModel;
     private JTable letterTable = new JTable();
@@ -41,8 +44,13 @@ public class Window extends JFrame {
 
         // Table contaning all the words
         JTable wordTable = new JTable();
+        wordTable.setDefaultEditor(Object.class, null);
+        wordTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        wordTable.setFont(new Font("Sans-Serif", Font.PLAIN, 13));
+        wordTable.setRowHeight(25);
+
         JScrollPane wordScrollPanel = new JScrollPane();
-        wordScrollPanel.setPreferredSize(new Dimension(wordPanelWidth, windowHeight - 30));
+        wordScrollPanel.setPreferredSize(new Dimension(wordPanelWidth, windowHeight - 102));
 
         wordTableModel = new DefaultTableModel(0, 1);
         wordTableModel.setColumnIdentifiers(new String[]{"Words"});
@@ -63,19 +71,68 @@ public class Window extends JFrame {
         letterTable.setRowHeight(estimatedRowHeight());
         letterTable.setModel(letterTableModel);
         letterTable.setFont(new Font("Sans-Serif", Font.PLAIN, 25));
+        letterTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setCellsAlignment(letterTable, SwingConstants.CENTER);
         letterPane.setViewportView(letterTable);
         letterPane.setPreferredSize(new Dimension(tableWidth, windowHeight));
 
         add(wordPane, BorderLayout.WEST);
         add(letterPane, BorderLayout.EAST);
+        add(createLoaderHDD(), BorderLayout.SOUTH);
 
         // Window setup
-        setSize((tableWidth + wordPanelWidth), windowHeight);
+        setSize(windowWidth(), windowHeight);
         setTitle("Boggle Solver");
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
+    }
+
+    private JPanel createLoaderHDD() {
+        JPanel HDDPanel = new JPanel();
+        HDDPanel.setLayout(new BorderLayout());
+        HDDPanel.setPreferredSize(new Dimension(windowWidth(), 40));
+
+        JPanel properties = new JPanel();
+        properties.setPreferredSize(new Dimension(windowWidth(), 35));
+
+        JLabel rowLabel = new JLabel();
+        rowLabel.setText("Rows: ");
+        properties.add(rowLabel);
+
+        final String[] comboxBoxGridOptions = {"3", "4", "5", "6", "7", "8"};
+        final JComboBox rowComboBox = new JComboBox(comboxBoxGridOptions);
+        rowComboBox.setSelectedIndex(1);
+        rowComboBox.addActionListener (new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                rowAmount = Integer.valueOf(comboxBoxGridOptions[rowComboBox.getSelectedIndex()]);
+                refreshGrid();
+            }
+        });
+        properties.add(rowComboBox);
+
+        JLabel columnLabel = new JLabel();
+        columnLabel.setText("Column: ");
+        properties.add(columnLabel);
+
+        final JComboBox columnComboBox = new JComboBox(comboxBoxGridOptions);
+        columnComboBox.setSelectedIndex(1);
+        columnComboBox.addActionListener (new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                columnAmount = Integer.valueOf(comboxBoxGridOptions[columnComboBox.getSelectedIndex()]);
+                refreshGrid();
+            }
+        });
+        properties.add(columnComboBox);
+
+        HDDPanel.add(properties, BorderLayout.SOUTH);
+
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setBorder(BorderFactory.createEmptyBorder());
+        progressBar.setValue(50);
+        HDDPanel.add(progressBar);
+
+        return HDDPanel;
     }
 
     /* setCellsAlignment: Aligns table cells content
@@ -91,6 +148,38 @@ public class Window extends JFrame {
         for (int columnIndex = 0; columnIndex < tableModel.getColumnCount(); columnIndex++) {
             table.getColumnModel().getColumn(columnIndex).setCellRenderer(rightRenderer);
         }
+    }
+
+    private Object[][] generateRandomLetterGrid() {
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        ArrayList<ArrayList<Object>> grid = new ArrayList<ArrayList<Object>>();
+
+        for (int row=0; row < rowAmount; row++) {
+            ArrayList<Object> rowArray = new ArrayList<Object>();
+            for (int column=0; column < columnAmount; column++) {
+                rowArray.add(alphabet.charAt(randomInt(0, alphabet.length())));
+            }
+            grid.add(rowArray);
+        }
+
+        Object[][] objectArray = new Object[grid.size()][];
+        for (int i = 0; i < grid.size(); i++) {
+            ArrayList<Object> row = grid.get(i);
+            objectArray[i] = row.toArray(new Object[row.size()]);
+        }
+        return objectArray;
+    }
+
+    private void refreshGrid() {
+        letterTableModel.setDataVector(generateRandomLetterGrid(), arrayWithEmptyStrings(columnAmount));
+        letterTable.setRowHeight(estimatedRowHeight());
+        setCellsAlignment(letterTable, SwingConstants.CENTER);
+    }
+
+    private String[] arrayWithEmptyStrings(int amount) {
+        ArrayList<String> array = new ArrayList<String>();
+        for (int i=0; i < amount; i++) { array.add(""); }
+        return array.toArray(new String[array.size()]);
     }
 
     private Action findWordsAction = new AbstractAction() {
@@ -118,8 +207,12 @@ public class Window extends JFrame {
         }
     };
 
+    // Generates a random number between the min and the max
+    public int randomInt(int min, int max) { return new Random().nextInt(max) + min; }
+
+    private int windowWidth() { return (tableWidth + wordPanelWidth); }
     // Estimates the row height in order to fill the entire window.
     private int estimatedRowHeight() {
-        return (windowHeight - 27) / rowAmount;
+        return (windowHeight - 67) / rowAmount;
     }
 }

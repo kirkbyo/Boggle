@@ -17,6 +17,7 @@ public class Boggle {
     private WordSearch wordSeacher = new WordSearch();
     private ArrayList<ArrayList<LetterNode>> nodes = null;
     public Set<String> foundWords = new HashSet<String>();
+    int currentWordCount = 0;
 
     public void generateNodeArrayFrom(ArrayList<ArrayList<Character>> charMatrix) {
         ArrayList<ArrayList<LetterNode>> nodes = new ArrayList<ArrayList<LetterNode>>();
@@ -34,6 +35,8 @@ public class Boggle {
     }
 
     public Set<String> findWords() {
+        currentWordCount=0;
+
         for (int i=0; i < gridWidth; i++) {
             for (int j = 0; j < gridHeight; j++) {
                 recursivelyFindWords(nodes, i, j, new WordQueue());
@@ -56,6 +59,7 @@ public class Boggle {
     }
 
     private void recursivelyFindWords(ArrayList<ArrayList<LetterNode>> nodes2D, int row, int column, WordQueue queue) {
+        currentWordCount++;
         LetterNode activeNode = nodes2D.get(row).get(column);
         activeNode.visited = true;
 
