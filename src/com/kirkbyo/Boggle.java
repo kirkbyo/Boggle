@@ -4,6 +4,7 @@ import com.sun.xml.internal.ws.util.StringUtils;
 
 import java.lang.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * Created by ozziekirkby on 2016-11-09.
@@ -37,8 +38,8 @@ public class Boggle {
     public Set<String> findWords() {
         currentWordCount=0;
 
-        for (int i=0; i < gridWidth; i++) {
-            for (int j = 0; j < gridHeight; j++) {
+        for (int i=0; i < gridHeight; i++) {
+            for (int j = 0; j < gridWidth; j++) {
                 recursivelyFindWords(nodes, i, j, new WordQueue());
             }
         }
@@ -69,14 +70,13 @@ public class Boggle {
             foundWords.add(StringUtils.capitalize(queue.word().toLowerCase()));
         }
 
-        for (int r=row-1; r <= row+1 && r < gridWidth; r++) {
-            for (int col=column-1; col <= column+1 && col < gridHeight; col++) {
+        for (int r=row-1; r <= row+1 && r < gridHeight; r++) {
+            for (int col=column-1; col <= column+1 && col < gridWidth; col++) {
                 if (r >= 0 && col>=0 && !nodes2D.get(r).get(col).visited && queue.word().length() < maxAmountLetters) {
                     recursivelyFindWords(nodes2D, r, col, queue);
                 }
             }
         }
-
         queue.removeLast();
         activeNode.visited = false;
     }

@@ -10,6 +10,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.Timer;
+import java.util.concurrent.Callable;
 
 /**
  * Created by ozziekirkby on 2016-11-09.
@@ -22,10 +24,12 @@ public class Window extends JFrame {
     public int rowAmount = 4;
     public int columnAmount = 4;
     Boggle boggle = new Boggle();
-    public JProgressBar progressBar;
+
+    private JProgressBar progressBar;
     private DefaultTableModel letterTableModel;
     private DefaultTableModel wordTableModel;
     private JTable letterTable = new JTable();
+    private LetterGridUtilities gridUtilities = new LetterGridUtilities();
 
     /* --- Window Methods --- */
     public void create() {
@@ -100,13 +104,14 @@ public class Window extends JFrame {
         rowLabel.setText("Rows: ");
         properties.add(rowLabel);
 
-        final String[] comboxBoxGridOptions = {"3", "4", "5", "6", "7", "8"};
+        final String[] comboxBoxGridOptions = {"3", "4", "5", "6"};
         final JComboBox rowComboBox = new JComboBox(comboxBoxGridOptions);
         rowComboBox.setSelectedIndex(1);
         rowComboBox.addActionListener (new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 rowAmount = Integer.valueOf(comboxBoxGridOptions[rowComboBox.getSelectedIndex()]);
                 refreshGrid();
+                boggle.gridHeight = rowAmount;
             }
         });
         properties.add(rowComboBox);
@@ -121,6 +126,7 @@ public class Window extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 columnAmount = Integer.valueOf(comboxBoxGridOptions[columnComboBox.getSelectedIndex()]);
                 refreshGrid();
+                boggle.gridWidth = columnAmount;
             }
         });
         properties.add(columnComboBox);
@@ -129,7 +135,7 @@ public class Window extends JFrame {
 
         progressBar = new JProgressBar(0, 100);
         progressBar.setBorder(BorderFactory.createEmptyBorder());
-        progressBar.setValue(50);
+        progressBar.setValue(0);
         HDDPanel.add(progressBar);
 
         return HDDPanel;
@@ -189,21 +195,47 @@ public class Window extends JFrame {
             for (int row=0; row < letterTable.getRowCount(); row++) {
                 ArrayList<Character> rowCharacters = new ArrayList<Character>();
                 for (int column=0; column < letterTable.getColumnCount(); column++) {
-                    String character = (String) letterTable.getModel().getValueAt(row, column);
-                    rowCharacters.add(character.charAt(0));
+                    try {
+                        String character = (String) letterTable.getModel().getValueAt(row, column);
+                        rowCharacters.add(character.charAt(0));
+                    } catch (java.lang.ClassCastException error) {
+                        Character character = (Character) letterTable.getModel().getValueAt(row, column);
+                        rowCharacters.add(character);
+                    }
                 }
                 charactersTable.add(rowCharacters);
             }
 
+            progressBar.setValue(0);
+            progressBar.setMaximum(gridUtilities.amountOfPossibilities(rowAmount, columnAmount));
             boggle.generateNodeArrayFrom(charactersTable);
-            Set<String> foundWords = boggle.findWords();
-            Object[] foundWordsArray = foundWords.toArray(new String[foundWords.size()]);
 
-            for (int i=0; i < foundWords.size(); i++) {
-                Vector<Object> data = new Vector<Object>();
-                data.add(foundWordsArray[i]);
-                wordTableModel.addRow(data);
-            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Set<String> foundWords = boggle.findWords();
+                    Object[] foundWordsArray = foundWords.toArray(new String[foundWords.size()]);
+
+                    for (int i=0; i < foundWords.size(); i++) {
+                        Vector<Object> data = new Vector<Object>();
+                        data.add(foundWordsArray[i]);
+                        wordTableModel.addRow(data);
+                    }
+                }
+            }, "Boggle solver thread").start();
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Timer timer = new Timer();
+                    timer.scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+                            progressBar.setValue(boggle.currentWordCount);
+                        }
+                    }, 1000, 1000);
+                }
+            }, "UI Thread").start();
         }
     };
 
@@ -212,7 +244,5 @@ public class Window extends JFrame {
 
     private int windowWidth() { return (tableWidth + wordPanelWidth); }
     // Estimates the row height in order to fill the entire window.
-    private int estimatedRowHeight() {
-        return (windowHeight - 67) / rowAmount;
-    }
+    private int estimatedRowHeight() { return (windowHeight - 67) / rowAmount; }
 }
