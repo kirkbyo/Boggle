@@ -1,10 +1,12 @@
 package com.kirkbyo;
 
 /**
- * Created by ozziekirkby on 2016-11-21.
+ * Letter Node containing the character and if the node has been visited or not yet
  */
 public class LetterNode {
+    // Character of the node
     char character = '\0';
+    // Boolean value determining if the node has been visited or not
     boolean visited = false;
 
     public LetterNode(char character) {
